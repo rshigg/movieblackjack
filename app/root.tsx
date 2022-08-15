@@ -1,9 +1,13 @@
 import type { MetaFunction } from '@remix-run/cloudflare';
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
 
+import twStyles from '~/styles/tailwind.css';
+
+export const links = () => [{ rel: 'stylesheet', href: twStyles }];
+
 export const meta: MetaFunction = () => ({
 	charset: 'utf-8',
-	title: 'New Remix App',
+	title: 'Movie Blackjack',
 	viewport: 'width=device-width,initial-scale=1',
 });
 
