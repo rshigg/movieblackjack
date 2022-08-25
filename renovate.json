@@ -1,0 +1,20 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:base"],
+	"packageRules": [
+		{
+			"matchPackagePatterns": ["*"],
+			"rangeStrategy": "replace"
+		},
+		{
+			"matchPackagePrefixes": ["@remix-run"],
+			"matchUpdateTypes": ["minor", "patch"],
+			"automerge": true
+		},
+		{
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch"],
+			"automerge": true
+		}
+	]
+}
