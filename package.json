@@ -9,7 +9,10 @@
 		"dev:css": "npm run generate:css -- --watch",
 		"dev": "run-p \"dev:*\"",
 		"generate:css": "tailwindcss -o ./app/styles/tailwind.css",
-		"start": "remix-serve build"
+		"start": "remix-serve build",
+		"format": "prettier --write .",
+		"lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
+		"typecheck": "tsc -b && tsc -b cypress"
 	},
 	"dependencies": {
 		"@remix-run/node": "^1.6.8",
