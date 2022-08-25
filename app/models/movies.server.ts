@@ -1,19 +1,21 @@
-import type { AppLoadContext } from '@remix-run/cloudflare';
+import invariant from 'tiny-invariant';
 import type { MovieDetails, Credits } from 'tmdb-ts';
 
 import { random } from '~/utils';
 
+invariant(process.env.MOVIE_DB_API_KEY, 'Missing TMDB API key');
+
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 
-export function headersWithAuthorization(context: AppLoadContext) {
+export function headersWithAuthorization() {
 	const headers = new Headers();
-	headers.set('Authorization', `Bearer ${context.MOVIE_DB_API_KEY}`);
+	headers.set('Authorization', `Bearer ${process.env.MOVIE_DB_API_KEY}`);
 	headers.set('Content-Type', `application/json;charset=utf-8`);
 	return headers;
 }
 
-async function getMovieCredits(context: AppLoadContext, movie: MovieDetails) {
-	const headers = headersWithAuthorization(context);
+async function getMovieCredits(movie: MovieDetails) {
+	const headers = headersWithAuthorization();
 
 	const res = await fetch(`${API_BASE_URL}/movie/${movie.id}/credits`, {
 		headers,
@@ -22,8 +24,8 @@ async function getMovieCredits(context: AppLoadContext, movie: MovieDetails) {
 	return (await res.json()) as Credits;
 }
 
-export async function getRandomMovie(context: AppLoadContext) {
-	const headers = headersWithAuthorization(context);
+export async function getRandomMovie() {
+	const headers = headersWithAuthorization();
 
 	const params = new URLSearchParams();
 	params.set('sort_by', 'popularity.asc');
@@ -37,7 +39,7 @@ export async function getRandomMovie(context: AppLoadContext) {
 
 	const { results } = (await res.json()) as { results: MovieDetails[] };
 	const movie = results[random(0, results.length - 1)];
-	const { cast } = await getMovieCredits(context, movie);
+	const { cast } = await getMovieCredits(movie);
 
 	return { movie, cast };
 }

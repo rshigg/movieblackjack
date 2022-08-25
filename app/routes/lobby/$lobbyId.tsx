@@ -1,6 +1,5 @@
 import * as React from 'react';
-import invariant from 'tiny-invariant';
-import { json, type LoaderFunction } from '@remix-run/cloudflare';
+import { json, type LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 
 import { getRandomMovie } from '~/models/movies.server';
@@ -10,9 +9,8 @@ const descriptionEmptyState = <span className="italic">Sorry, no description ¯\
 
 type MovieData = Awaited<ReturnType<typeof getRandomMovie>>;
 
-export const loader: LoaderFunction = async ({ context }) => {
-	invariant(context, 'Context not available');
-	const movieData = await getRandomMovie(context);
+export const loader: LoaderFunction = async () => {
+	const movieData = await getRandomMovie();
 	return json<MovieData>(movieData);
 };
 
