@@ -44,6 +44,15 @@ export default function Lobby() {
 
 	const posterSwapped = React.useRef(false);
 
+	const swapPoster: React.ReactEventHandler<HTMLImageElement> = () => {
+		// TODO: re-enable when typescript has built-in Connection types
+		// 	const { effectiveType: network = '4g', saveData = false } = navigator.connection || {};
+		// 	if (!posterSwapped.current && network === '4g' && !saveData) {
+		// 		e.currentTarget.src = getTMDBImagePath(movie.poster_path);
+		// 	}
+		posterSwapped.current = true;
+	};
+
 	return (
 		<main className="max-w-2xl mx-auto py-8 px-4 sm:py-10 sm:px-6 lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-x-8 place-content-center min-h-screen">
 			{/* Movie details */}
@@ -79,19 +88,12 @@ export default function Lobby() {
 			{/* Movie poster */}
 			<div className="mt-10 lg:mt-0 lg:col-start-2 lg:row-span-2 lg:self-center">
 				<img
-					src={getTMDBImagePath(movie.poster_path, 200)}
+					src={getTMDBImagePath(movie.poster_path)}
 					alt=""
 					width="300"
 					height="450"
 					className="w-full h-full object-center object-cover"
-					onLoad={(e) => {
-						const { effectiveType: network = '4g', saveData = false } = navigator.connection || {};
-
-						if (!posterSwapped.current && network === '4g' && !saveData) {
-							e.currentTarget.src = getTMDBImagePath(movie.poster_path);
-						}
-						posterSwapped.current = true;
-					}}
+					onLoad={swapPoster}
 				/>
 			</div>
 		</main>
