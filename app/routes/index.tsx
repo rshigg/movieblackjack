@@ -1,30 +1,38 @@
-import { type ActionFunction, json } from '@remix-run/node';
-import { Form } from '@remix-run/react';
+import { json, type LoaderArgs, type ActionArgs } from '@remix-run/node';
+import { Form, useActionData } from '@remix-run/react';
 
-import { createLobby, joinLobby } from '~/models/lobby.server';
+import { clearLobbySession, createLobby, joinLobby } from '~/models/lobby.server';
 import { HOME_ACTIONS } from '~/consts';
 
 type ActionFormData =
 	| { type: typeof HOME_ACTIONS.START_LOBBY }
 	| { type: typeof HOME_ACTIONS.JOIN_LOBBY; code: string };
 
-export const action: ActionFunction = async ({ request }) => {
+export async function loader({ request }: LoaderArgs) {
+	const headers = new Headers();
+	headers.set('Set-Cookie', await clearLobbySession(request));
+	return json(null, { headers });
+}
+
+export async function action({ request }: ActionArgs) {
 	const formData = Object.fromEntries(await request.formData()) as ActionFormData;
 	const { type } = formData;
 
 	if (type === HOME_ACTIONS.START_LOBBY) {
-		return createLobby();
+		return await createLobby();
 	}
 
 	if (type === HOME_ACTIONS.JOIN_LOBBY) {
 		const { code } = formData;
-		return joinLobby(code);
+		return await joinLobby(code);
 	}
 
-	return json(null);
-};
+	return json(undefined);
+}
 
 export default function Index() {
+	const data = useActionData<typeof action>();
+
 	return (
 		<div className="min-h-screen flex flex-col justify-center">
 			<div className="flex flex-col items-center max-w-7xl mx-auto text-center py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
@@ -63,6 +71,9 @@ export default function Index() {
 						>
 							Join a lobby
 						</button>
+						<div role="status" className="text-red-700 flex justify-center text-left text-sm px-1">
+							{data?.error && <span className="mt-2">{data.error}</span>}
+						</div>
 					</Form>
 				</div>
 			</div>

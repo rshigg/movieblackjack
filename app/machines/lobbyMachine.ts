@@ -1,6 +1,8 @@
 import { createMachine, assign } from 'xstate';
 
-import type { Lobby, Player } from '~/types/lobby';
+import type { Lobby, Player, Guess } from '~/types/lobby';
+
+const LOBBY_MAX_PLAYERS = 8;
 
 function getNextPlayer({ players, activePlayer }: Lobby) {
 	const activePlayerIndex = players.findIndex((player) => player.id === activePlayer);
@@ -9,94 +11,109 @@ function getNextPlayer({ players, activePlayer }: Lobby) {
 	return players[newIndex].id;
 }
 
-type Events =
+export type Events =
+	| { type: 'JOIN_GAME'; data: Player }
 	| { type: 'PLAYER_JOINED'; data: Player }
 	| { type: 'PLAYER_LEFT'; data: Player['id'] }
 	| { type: 'START_GAME' }
-	| { type: 'GUESS'; data?: number }
+	| ({ type: 'GUESS' } & Pick<Guess, 'movieId' | 'scoreGuess'>)
 	| { type: 'HIT' }
 	| { type: 'STAY' }
 	| { type: 'GAME_FINISHED' };
 
-type Context = Lobby & {
-	currentPlayerId: string;
+export type LobbyContext = Lobby & {
+	currentPlayer: Player['id'] | null;
+};
+
+export const defaultContext: LobbyContext = {
+	code: '',
+	players: [],
+	activePlayer: null,
+	currentPlayer: null,
 };
 
 export const lobbyMachine =
-	/** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAnMqGAxAAoAyAggJoCiASgPoBSA8gJIByNAIoqNgHtYASwAuwgQDs+IAB6IATAAYAHJgAsAdiUA2BQEYArEoDMATiVn9+gDQgAnogC0JzZgWaV+3erMmVHjpGAL7BdoRYeAToYEQAygAqFHQJDADiFACyNDKCIuJSMvIITp6YhipKhgpa6hWaOiaGdo4IOoaYStYm6gpWNfqeZqHhMZjCkgAEeAJQ+LCwmLDYYADGoijiklBEuUJiEtJIcs6GZuqYKhU1Jl3qvVotiO2d3b396oMqw2EgEeNTGZzOCLKAAVxBEx2aQAqjQ4nE9vlDkVnCZ0ZgdDp1HpGjolDUzk8ELd9J18e0AjoGkpPCYRn8xhNprhZvNFgALMSTAS4SawDb2IgACTYCSRB0Kx2KLgUCk65iCZnaBOqtgciEGbkMnlp1J032xChUDP+zKB7MwXNEPL5ApQQsS1AlBSOoGK6hMmIqnt6SnUBIN-uJtzMmOxmk0WmVFn0OlNTMBrOBCyIGWyDAAYpw2HFhTwXSjpc5fDpMPozHLTCZ9DXTGZidUy1jI658RW+gniORqPQGGQaJnxcc8pK3ScEFoOk1zFpvH10TpibWy98cTjVAYDWYTQzJAIIHAZP8ohFC1L3Yo1GYzNp-CpNCYsYYaypiU5b51jfiTMpNNY-y7LBzWTS1ljWDYtigc9xxlTQDA0FQ9F8J98U9ZoNRKfxOkMCpaxqG8zn0ICARZNkQUwcFIW2GDURKT01ECe59BUSpeijJdMIUHpMFvQwA0ff1Kh0c4SJA8iFitbleX5QVaOLEoajUeDlX0ANsR6HEFGJbiLj4gTbnUYTRN+M0kwk+AR32V06NKOpEOQvwsX9Jp3zjMkqmubwzkrXQFBIiApDAeTL0UnVeM0aoA2sfj0W0zD8TUIJ9AUQwDTQm8flGDAQonUoRIcgjUJcjDWicbivU8gIjJxNKkPUUJQiAA */
+	/** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAnMqGAxAAoAyAggJoCiASgPoBSA8gJIByNAIoqNgHtYASwAuwgQDs+IAB6IAjADYAzJgAMKlQA4A7OqUAmBQFYF2lQBoQAT0QBaQyoCcmZc-XqL29bufOAFgBfIOtCLDwCdDAiAGUAFQo6eIYAcQoAWRoZQRFxKRl5BEcA7UxDM2cTQyrTQJUTaztihTVDIxNtGqUfC0M9ELDozFhsMABjURRxSSgiHKExCWkkOUUFVw9DCu0TKoDdJWdtJsUAk0wAp1V1ANNdDc1BkHDMKABXOBFZolSAVRosViCzyy0KiCqmCOCju1wC6mc5iUpwQVzKJhUfm0PQUNS8z1eAAsxAACAS4EmwKY2IgACTY8RBSwKqyK-QurWM5xM5wsARUyNsiAaukuJl0AoO235ASUBOGxNEZIpVJQNIS1CZ+RWoCK9nMhkw+iuSiOpW0ykFzSUMI04r0uMMAQOOnlxFYnDSmWyq1yzJ1awQDQUlz87RhFv5hnUjSFLQqUJ57V5Khjx20bpi5Go9AYZBoADFGb7FtrwQhAlC7pG7gY7nsUfZnZtdNGXCpWloM89JAIIHAZK9IuEtWDWQ5o651MYTOpWhZxQ9dI37m4FAYbUp9OYVKVMyMxpNpsJZqOWbrEGZys4-DftmZxVoUZsFOZZ9GlOdDLoLPuPl8TygM8AyKPRyl3FxtFKTRZ1xFEVBqI0AiqQJqiUPYan3RVlUpalgPLCoQ3hZxVB5IwlBjdCUQxC4SJtW5jDfJ5QheYYICkMB8PHBAnRDfwtDMCpOiMCoUS3EMLAg-kOwsGN9wAM3eAAbJSuIvBANgCKFES0RiDFuBRGygzAdB8IwrgOTtMzUwNHFbcpKmqWo9mdRsELUdxPGOK4HnOOUQiCIA */
 	createMachine(
 		{
-			context: { code: '', players: [], activePlayer: null, currentPlayerId: '' },
+			context: defaultContext,
 			tsTypes: {} as import('./lobbyMachine.typegen').Typegen0,
-			schema: { context: {} as Context, events: {} as Events },
+			schema: { context: {} as LobbyContext, events: {} as Events },
 			predictableActionArguments: true,
 			id: 'game',
 			initial: 'pregame',
 			on: {
+				JOIN_GAME: [
+					{
+						cond: 'lobbyIsFull',
+						target: '.full',
+					},
+					{
+						actions: ['setCurrentPlayer', 'playerJoined'],
+					},
+				],
 				PLAYER_LEFT: {
 					actions: 'playerLeft',
 				},
 			},
 			states: {
 				pregame: {
+					tags: 'pause',
 					on: {
 						PLAYER_JOINED: {
 							actions: 'playerJoined',
 						},
 						START_GAME: {
-							target: 'in progress',
+							actions: 'advanceActivePlayer',
+							target: 'spectating',
 						},
 					},
 				},
-				'in progress': {
-					entry: 'advanceActivePlayer',
-					initial: 'spectating',
-					states: {
-						spectating: {
-							always: {
-								cond: 'currentPlayerIsActive',
-								target: 'guessing',
-							},
-						},
-						guessing: {
-							on: {
-								GUESS: {
-									target: 'hit or stay',
-								},
-							},
-						},
-						'hit or stay': {
-							on: {
-								HIT: {
-									target: 'guessing',
-								},
-								STAY: [
-									{
-										cond: 'isLastGuess',
-										target: '#game.done',
-									},
-									{
-										actions: 'advanceActivePlayer',
-										target: 'spectating',
-									},
-								],
-							},
+				spectating: {
+					tags: 'pause',
+					always: {
+						cond: 'currentPlayerIsActive',
+						target: 'guessing',
+					},
+				},
+				guessing: {
+					tags: 'pause',
+					on: {
+						GUESS: {
+							target: 'hit or stay',
 						},
 					},
+				},
+				'hit or stay': {
+					tags: 'pause',
 					on: {
-						GAME_FINISHED: {
-							target: 'done',
+						HIT: {
+							target: 'guessing',
 						},
+						STAY: [
+							{
+								cond: 'isLastGuess',
+								target: 'done',
+							},
+							{
+								actions: 'advanceActivePlayer',
+								target: 'spectating',
+							},
+						],
 					},
 				},
 				done: {
 					entry: 'calculateWinner',
 					type: 'final',
 				},
+				full: {
+					type: 'final',
+				},
 			},
 		},
 		{
 			actions: {
+				setCurrentPlayer: assign((_, event) => ({ currentPlayer: event.data.id })),
 				playerJoined: assign((ctx, event) => ({ players: [...ctx.players, event.data] })),
 				playerLeft: assign((ctx, event) => {
 					const leavingPlayerId = event.data;
@@ -111,8 +128,10 @@ export const lobbyMachine =
 				calculateWinner: () => {},
 			},
 			guards: {
-				currentPlayerIsActive: (ctx) => ctx.activePlayer === ctx.currentPlayerId,
+				lobbyIsFull: (ctx) => ctx.players.length === LOBBY_MAX_PLAYERS,
+				currentPlayerIsActive: (ctx) => ctx.activePlayer === ctx.currentPlayer,
 				isLastGuess: (ctx) => ctx.players.at(-1)?.id === ctx.activePlayer,
 			},
+			services: {},
 		}
 	);

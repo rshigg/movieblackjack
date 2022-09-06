@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { json, type LoaderFunction } from '@remix-run/node';
+import { json, type LoaderFunction, type ActionFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 
 import { getRandomMovie } from '~/models/movies.server';
@@ -14,7 +14,11 @@ export const loader: LoaderFunction = async () => {
 	return json<MovieData>(movieData);
 };
 
-export default function Lobby() {
+export const action: ActionFunction = async () => {
+	return json(null);
+};
+
+export default function Guessing() {
 	const { movie, cast } = useLoaderData<MovieData>();
 
 	const title = `${movie.title}${
@@ -54,7 +58,7 @@ export default function Lobby() {
 	};
 
 	return (
-		<main className="max-w-2xl mx-auto py-8 px-4 sm:py-10 sm:px-6 lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-x-8 place-content-center min-h-screen">
+		<div className="max-w-2xl mx-auto py-8 px-4 sm:py-10 sm:px-6 lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-x-8 place-content-center flex-1">
 			{/* Movie details */}
 			<div className="lg:max-w-lg lg:self-end space-y-3">
 				<h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:tracking-tight sm:text-4xl">
@@ -96,6 +100,6 @@ export default function Lobby() {
 					onLoad={swapPoster}
 				/>
 			</div>
-		</main>
+		</div>
 	);
 }

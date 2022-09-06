@@ -6,7 +6,7 @@ export type Guess = {
 
 export type Player = {
 	id: string;
-	name: string;
+	nickname: string;
 	guesses: Guess[];
 };
 
