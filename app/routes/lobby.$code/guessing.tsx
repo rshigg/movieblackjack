@@ -1,25 +1,45 @@
 import * as React from 'react';
-import { json, type LoaderFunction, type ActionFunction } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { type ActionArgs, json, type LoaderArgs, redirect } from '@remix-run/node';
+import { Form, useLoaderData } from '@remix-run/react';
 
 import { getRandomMovie } from '~/models/movies.server';
+import {
+	getLobbyState,
+	requireLobbyState,
+	sendEventToLobby,
+	updateLobbySession,
+} from '~/models/lobby.server';
 import { getTMDBImagePath } from '~/utils';
 
 const descriptionEmptyState = <span className="italic">Sorry, no description ¯\_(ツ)_/¯</span>;
 
-type MovieData = Awaited<ReturnType<typeof getRandomMovie>>;
+export async function loader({ request, params: { code } }: LoaderArgs) {
+	await requireLobbyState(request, code);
 
-export const loader: LoaderFunction = async () => {
 	const movieData = await getRandomMovie();
-	return json<MovieData>(movieData);
-};
+	return json(movieData);
+}
 
-export const action: ActionFunction = async () => {
-	return json(null);
-};
+type ActionData = { guess: string };
+
+export async function action({ request, params: { code = '' } }: ActionArgs) {
+	const { guess } = Object.fromEntries(await request.formData()) as ActionData;
+	const state = await getLobbyState(request, code);
+	const headers = new Headers();
+
+	const guessAsNum = Number(guess);
+	// constrain guess to between 0 and 10
+	const scoreGuess = isNaN(guessAsNum) || guessAsNum < 0 ? 0 : Math.min(guessAsNum, 10);
+
+	const nextState = await sendEventToLobby(state, { type: 'GUESS', movieId: '', scoreGuess });
+
+	headers.set('Set-Cookie', await updateLobbySession(request, nextState));
+
+	return redirect(`/lobby/${code}/${String(nextState.value)}`, { headers });
+}
 
 export default function Guessing() {
-	const { movie, cast } = useLoaderData<MovieData>();
+	const { movie, cast } = useLoaderData<typeof loader>();
 
 	const title = `${movie.title}${
 		movie.original_title !== movie.title ? ` (${movie.original_title})` : ''
@@ -58,7 +78,7 @@ export default function Guessing() {
 	};
 
 	return (
-		<div className="max-w-2xl mx-auto py-8 px-4 sm:py-10 sm:px-6 lg:max-w-7xl lg:px-8 lg:grid lg:grid-cols-2 lg:gap-x-8 place-content-center flex-1">
+		<div className="flex-1 max-w-2xl mx-auto py-8 px-4 sm:py-10 sm:px-6 lg:max-w-7xl lg:px-8 grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8 lg:max-h-full place-content-center">
 			{/* Movie details */}
 			<div className="lg:max-w-lg lg:self-end space-y-3">
 				<h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:tracking-tight sm:text-4xl">
@@ -71,13 +91,14 @@ export default function Guessing() {
 
 			{/* Rating form */}
 			<div className="mt-6 lg:max-w-lg lg:col-start-1 lg:row-start-2 lg:self-start">
-				<form className="space-y-2">
+				<Form method="post" className="space-y-2">
 					<label htmlFor="rating-guess" className="block text-lg font-medium text-gray-700">
 						Guess the rating
 					</label>
 					<input
 						type="text"
 						id="rating-guess"
+						name="guess"
 						className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
 					/>
 					<button
@@ -86,17 +107,17 @@ export default function Guessing() {
 					>
 						Submit
 					</button>
-				</form>
+				</Form>
 			</div>
 
 			{/* Movie poster */}
-			<div className="mt-10 lg:mt-0 lg:col-start-2 lg:row-span-2 lg:self-center">
+			<div className="mx-auto mt-10 lg:mt-0 lg:col-start-2 lg:row-span-2 lg:self-center">
 				<img
 					src={getTMDBImagePath(movie.poster_path)}
 					alt=""
 					width="300"
 					height="450"
-					className="w-full h-full object-center object-cover"
+					className="w-full h-auto max-w-md"
 					onLoad={swapPoster}
 				/>
 			</div>

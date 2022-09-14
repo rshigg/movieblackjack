@@ -108,6 +108,9 @@ export default function Lobby() {
 
 	return (
 		<div className="p-4">
+			<h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+				Waiting for game to start
+			</h1>
 			<pregameFetcher.Form method="post" className="max-w-sm">
 				{formContent}
 			</pregameFetcher.Form>

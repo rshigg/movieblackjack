@@ -7,17 +7,12 @@ export async function loader({ request, params: { code = '' } }: LoaderArgs) {
 	return json({});
 }
 
-export default function LobbyFull() {
+export default function GameDone() {
 	return (
 		<div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 sm:py-24 lg:px-8 lg:py-48">
-			<img
-				src="https://images.unsplash.com/photo-1545972154-9bb223aac798?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=3050&q=80&exp=8&con=-15&sat=-75"
-				alt=""
-				className="fixed inset-0 -z-10"
-			/>
-			<h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">Lobby full.</h1>
-			<p className="mt-2 text-lg font-medium text-black/80">
-				The maximum number of players allowed per game have joined this lobby.
+			<h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Game Over</h1>
+			<p className="text-4xl font-bold tracking-tight text-indigo-600 sm:text-5xl">
+				{`{user}`} wins!
 			</p>
 			<div className="mt-6">
 				<Link

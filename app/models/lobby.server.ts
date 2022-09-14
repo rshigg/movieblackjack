@@ -48,6 +48,19 @@ export async function getLobbyState(request: Request, code: string) {
 	return lobbyMachine.resolveState(session.get('state'));
 }
 
+export async function requireLobbyState(request: Request, code?: string) {
+	if (!code) throw redirect('/');
+
+	const url = new URL(request.url).toString();
+	const state = await getLobbyState(request, code);
+
+	if (!url.endsWith(String(state.value)) || !state) {
+		throw redirect(`/lobby/${code}`);
+	}
+
+	return state;
+}
+
 export async function sendEventToLobby(currentState: AnyState, event: Events) {
 	return await asyncInterpret(lobbyMachine, 3_000, currentState, event);
 }
