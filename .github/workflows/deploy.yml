@@ -12,11 +12,11 @@ permissions:
 
 jobs:
   lint:
-    name: ⬣ ESLint
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: 🛑 Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.11.0
 
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
@@ -24,22 +24,41 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: 📥 Download deps
-        uses: bahmutov/npm-install@v1
-        with:
-          useLockFile: false
+        run: pnpm install
 
       - name: 🔬 Lint
-        run: npm run lint
+        run: pnpm run lint
 
   typecheck:
     name: ʦ TypeScript
     runs-on: ubuntu-latest
     steps:
       - name: 🛑 Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.11.0
 
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
@@ -47,15 +66,34 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: true
+
+      # - name: Get pnpm store directory
+      #   id: pnpm-cache
+      #   shell: bash
+      #   run: |
+      #     echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      # - name: Setup pnpm cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+      #     key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-pnpm-store-
 
       - name: 📥 Download deps
-        uses: bahmutov/npm-install@v1
-        with:
-          useLockFile: false
+        run: pnpm install
 
       - name: 🔎 Type check
-        run: npm run typecheck --if-present
+        run: pnpm run typecheck
 
   build:
     name: 🐳 Build
@@ -64,13 +102,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🛑 Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.11.0
 
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
       - name: 👀 Read app name
-        uses: SebRollen/toml-action@v1.0.0
+        uses: SebRollen/toml-action@v1.0.2
         id: app_name
         with:
           file: 'fly.toml'
@@ -125,13 +163,13 @@ jobs:
 
     steps:
       - name: 🛑 Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.11.0
 
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
       - name: 👀 Read app name
-        uses: SebRollen/toml-action@v1.0.0
+        uses: SebRollen/toml-action@v1.0.2
         id: app_name
         with:
           file: 'fly.toml'

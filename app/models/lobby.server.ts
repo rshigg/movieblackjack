@@ -54,7 +54,7 @@ export async function requireLobbyState(request: Request, code?: string) {
 	const url = new URL(request.url).toString();
 	const state = await getLobbyState(request, code);
 
-	if (!url.endsWith(String(state.value)) || !state) {
+	if (!(url.endsWith(String(state.value)) && state)) {
 		throw redirect(`/lobby/${code}`);
 	}
 

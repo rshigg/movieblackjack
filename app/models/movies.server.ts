@@ -10,7 +10,7 @@ const API_BASE_URL = 'https://api.themoviedb.org/3';
 export function headersWithAuthorization() {
 	const headers = new Headers();
 	headers.set('Authorization', `Bearer ${process.env.MOVIE_DB_API_KEY}`);
-	headers.set('Content-Type', `application/json;charset=utf-8`);
+	headers.set('Content-Type', "application/json;charset=utf-8");
 	return headers;
 }
 

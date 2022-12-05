@@ -13,7 +13,7 @@ export async function asyncInterpret(
 	if (initialEvent) {
 		service.send(initialEvent);
 	}
-	return await waitFor(service, (state) => state.hasTag('pause') || state.done || false, {
+	return await waitFor(service, (state) =>  state.done || state.hasTag('pause'), {
 		timeout: msToWait,
 	});
 }

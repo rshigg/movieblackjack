@@ -1,19 +1,19 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:base"],
+	"schedule": [
+		"first day of the month"
+	],
 	"packageRules": [
 		{
 			"matchPackagePatterns": ["*"],
 			"rangeStrategy": "replace"
 		},
 		{
-			"matchPackagePrefixes": ["@remix-run"],
+			"matchPackagePrefixes": ["*"],
 			"matchUpdateTypes": ["minor", "patch"],
-			"automerge": true
-		},
-		{
-			"matchDepTypes": ["devDependencies"],
-			"matchUpdateTypes": ["minor", "patch"],
+			"groupName": "all non-major dependencies",
+			"groupSlug": "all-minor-patch",
 			"automerge": true
 		}
 	]
